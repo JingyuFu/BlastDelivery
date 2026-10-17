@@ -63,7 +63,7 @@ void ABDPlayerController::PlayerTick(float DeltaSeconds)
     if (IsPaused()) return;
     auto* Mode = GetWorld()->GetAuthGameMode<ABDGameMode>();
     auto* Courier = Cast<ABDCharacter>(GetPawn());
-    if (!Courier || !Mode || Mode->bCompleted) return;
+    if (!Courier || !Mode || !Mode->IsGameplayInputAllowed()) return;
     const FVector2D Input((IsInputKeyDown(EKeys::D) ? 1.f : 0.f) - (IsInputKeyDown(EKeys::A) ? 1.f : 0.f),
                           (IsInputKeyDown(EKeys::S) ? 1.f : 0.f) - (IsInputKeyDown(EKeys::W) ? 1.f : 0.f));
     Courier->MoveInRoom(Input);
@@ -93,7 +93,7 @@ void ABDPlayerController::UpdateMouseAim(ABDCharacter* Courier)
 }
 void ABDPlayerController::PressBomb()
 {
-    if (IsPaused()) return;
+    if (!CanUseGameplayInput()) return;
     bBombButtonDown = true;
     if (auto* Courier = Cast<ABDCharacter>(GetPawn()))
     {
@@ -104,11 +104,11 @@ void ABDPlayerController::PressBomb()
 void ABDPlayerController::ReleaseBomb()
 {
     bBombButtonDown = false;
-    if (!IsPaused()) if (auto* Courier = Cast<ABDCharacter>(GetPawn())) Courier->DropBomb();
+    if (CanUseGameplayInput()) if (auto* Courier = Cast<ABDCharacter>(GetPawn())) Courier->DropBomb();
 }
 void ABDPlayerController::ThrowBomb()
 {
-    if (bBombButtonDown && !IsPaused())
+    if (CanUseGameplayInput())
         if (auto* Courier = Cast<ABDCharacter>(GetPawn()))
         {
             // Input callbacks run before PlayerTick's usual aim update.
@@ -123,10 +123,45 @@ void ABDPlayerController::TogglePause()
     if (bWasPaused && !IsInputKeyDown(EKeys::RightMouseButton))
     {
         bBombButtonDown = false;
-        if (auto* Courier = Cast<ABDCharacter>(GetPawn())) Courier->DropBomb();
+        if (CanUseGameplayInput()) if (auto* Courier = Cast<ABDCharacter>(GetPawn())) Courier->DropBomb();
     }
 }
 void ABDPlayerController::Restart()
 {
     if (auto* Mode = GetWorld()->GetAuthGameMode<ABDGameMode>()) Mode->RestartTutorial();
+}
+bool ABDPlayerController::CanUseGameplayInput() const
+{
+    const auto* Mode = GetWorld()->GetAuthGameMode<ABDGameMode>();
+    return !IsPaused() && Mode && Mode->IsGameplayInputAllowed();
+}
+void ABDPlayerController::ResetBombInput()
+{
+    bBombButtonDown = false;
+    FlushPressedKeys();
+}
+void ABDPlayerController::SetTutorialView(const FVector& Center)
+{
+    if (!RoomCamera) RoomCamera = GetWorld()->SpawnActor<ACameraActor>();
+    if (!RoomCamera) return;
+    ViewCenter = Center;
+    MinimumViewWidth = 2800.f;
+    MinimumViewHeight = 1650.f;
+    const FRotator Rotation(OverheadPitch, -90.f, 0.f);
+    RoomCamera->SetActorLocationAndRotation(Center - Rotation.Vector()*CameraDistance, Rotation);
+    auto* Camera = RoomCamera->GetCameraComponent();
+    Camera->SetProjectionMode(ECameraProjectionMode::Orthographic);
+    Camera->SetConstraintAspectRatio(false);
+    Camera->bOverrideAspectRatioAxisConstraint = true;
+    Camera->SetAspectRatioAxisConstraint(AspectRatio_MaintainXFOV);
+    Camera->SetAutoCalculateOrthoPlanes(false);
+    Camera->SetUpdateOrthoPlanes(false);
+    Camera->SetOrthoNearClipPlane(1.f);
+    Camera->SetOrthoFarClipPlane(6000.f);
+    UpdateCameraFraming();
+    SetViewTarget(RoomCamera);
+}
+float ABDPlayerController::GetViewWidth() const
+{
+    return RoomCamera ? RoomCamera->GetCameraComponent()->OrthoWidth : 3000.f;
 }

@@ -21,7 +21,11 @@ public:
     void PressBomb();
     void ReleaseBomb();
     void ThrowBomb();
+    void SetTutorialView(const FVector& Center);
+    float GetViewWidth() const;
+    void ResetBombInput();
 private:
+    bool CanUseGameplayInput() const;
     void UpdateCameraFraming();
     void UpdateMouseAim(ABDCharacter* Courier);
     UPROPERTY(EditDefaultsOnly, Category="Camera") float OverheadPitch = -65.f;

@@ -1,4 +1,5 @@
 #include "BDCrate.h"
+#include "BDGameMode.h"
 #include "BDVisuals.h"
 #include "PhysicsEngine/BodyInstance.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
@@ -74,6 +75,8 @@ void ABDCrate::ApplyBlast(const FVector& Origin, float Strength)
 
 void ABDCrate::Respawn()
 {
+    if (auto* Mode = GetWorld()->GetAuthGameMode<ABDGameMode>())
+        if (Mode->RequestSceneReset()) return;
     Mesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
     Mesh->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
     SetActorTransform(SpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);

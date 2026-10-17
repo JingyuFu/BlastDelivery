@@ -98,7 +98,7 @@ void ABDGoal::OnConstruction(const FTransform& Transform)
     Mesh->SetRelativeLocation(FVector(0,0,-Extent.Z+3.f));
     BDVisuals::Material(Mesh, TEXT("Goal"));
 }
-bool ABDGoal::ContainsSettledCrate(const ABDCrate* Crate) const
+bool ABDGoal::ContainsCrate(const ABDCrate* Crate) const
 {
     if (!Crate || !Crate->Mesh) return false;
     const FBox Bounds = Crate->Mesh->Bounds.GetBox();
@@ -113,7 +113,11 @@ bool ABDGoal::ContainsSettledCrate(const ABDCrate* Crate) const
         // horizontal boundary exact, but don't reject a settled box for sub-cm floor slop.
         if (FMath::Abs(Local.X) > Extent.X || FMath::Abs(Local.Y) > Extent.Y || FMath::Abs(Local.Z) > Extent.Z + 2.f) return false;
     }
-    return Crate->Mesh->GetPhysicsLinearVelocity().Size() <= MaxSettledSpeed
+    return true;
+}
+bool ABDGoal::ContainsSettledCrate(const ABDCrate* Crate) const
+{
+    return ContainsCrate(Crate) && Crate->Mesh->GetPhysicsLinearVelocity().Size() <= MaxSettledSpeed
         && Crate->Mesh->GetPhysicsAngularVelocityInDegrees().Size() <= 3.f;
 }
 

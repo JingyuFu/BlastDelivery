@@ -72,7 +72,7 @@ void ABDBomb::Tick(float DeltaSeconds)
     if (RemainingFuse <= 0.f) Explode();
 }
 
-void ABDBomb::Release(bool bThrow)
+void ABDBomb::Release(bool bThrow, bool bNotifyAction)
 {
     if (!Holder.IsValid()) return;
     ABDCharacter* Character = Holder.Get();
@@ -85,6 +85,7 @@ void ABDBomb::Release(bool bThrow)
     auto* Mode = GetWorld()->GetAuthGameMode<ABDGameMode>();
     Movement->Velocity = bThrow && Mode ? Direction * Mode->ThrowSpeed + FVector(0,0,Mode->ThrowLift) : FVector::ZeroVector;
     Movement->Activate(true);
+    if (Mode && bNotifyAction) Mode->OnBombReleased(this, bThrow);
 }
 
 void ABDBomb::Nudge(const FVector& Direction)
@@ -102,6 +103,7 @@ void ABDBomb::Explode()
     if (auto* Mode = GetWorld()->GetAuthGameMode<ABDGameMode>())
     {
         Mode->ExplodeAt(GetActorLocation(), Holder.Get(), this);
+        Mode->OnBombExploded(this);
         Mode->ClearBomb(this);
     }
     Destroy();

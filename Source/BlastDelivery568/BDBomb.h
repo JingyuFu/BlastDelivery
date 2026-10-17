@@ -19,7 +19,7 @@ public:
     virtual void Tick(float DeltaSeconds) override;
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     void Ignite(ABDCharacter* Character, float Fuse);
-    void Release(bool bThrow);
+    void Release(bool bThrow, bool bNotifyAction = true);
     void Nudge(const FVector& Direction);
     void Explode();
     bool IsHeld() const { return Holder.IsValid(); }

@@ -41,7 +41,7 @@ ABDBomb* ABDGameMode::DrawBomb(ABDCharacter* Holder)
     // EndPlay/Explode normally clear this immediately. Also discard a stale or
     // destroying actor before enforcing the single-live-bomb rule.
     if (!IsValid(ActiveBomb) || ActiveBomb->IsActorBeingDestroyed()) ActiveBomb = nullptr;
-    if (bCompleted || ActiveBomb || !IsValid(Holder) || UGameplayStatics::IsGamePaused(this)) return nullptr;
+    if (!IsGameplayInputAllowed() || ActiveBomb || !IsValid(Holder) || UGameplayStatics::IsGamePaused(this)) return nullptr;
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     ActiveBomb = GetWorld()->SpawnActor<ABDBomb>(Holder->GetBombPosition(), FRotator::ZeroRotator, Params);
@@ -82,22 +82,36 @@ void ABDGameMode::ExplodeAt(const FVector& Position, ABDCharacter* Holder, AActo
         Applied.Add(Body);
         const float Strength = CrateImpulse * BlastFalloff(FVector::Dist(Position, Body->GetComponentLocation()), BlastRadius);
         if (Strength <= 0.f || !HasBlastLineOfSight(Position, Target, Bomb)) continue;
-        if (auto* HeavyCrate = Cast<ABDCrate>(Target)) HeavyCrate->ApplyBlast(Position, Strength);
+        if (auto* HeavyCrate = Cast<ABDCrate>(Target))
+        {
+            HeavyCrate->ApplyBlast(Position, Strength);
+            OnCrateBlasted(HeavyCrate);
+        }
         else Body->AddImpulse((Body->GetComponentLocation()-Position).GetSafeNormal()*Strength);
     }
     if (auto* Player = Cast<ABDCharacter>(UGameplayStatics::GetPlayerPawn(this, 0)))
     {
         if (Holder == Player)
-            Player->LaunchCharacter(-Player->GetActorForwardVector()*JumpHorizontalSpeed + FVector(0,0,JumpVerticalSpeed), true, true);
+        {
+            Player->LaunchCharacter(GetHeldBlastVelocity(Player), true, true);
+            OnPlayerBlasted(Player);
+        }
         else
         {
             const float Falloff = BlastFalloff(FVector::Dist(Position,Player->GetActorLocation()), BlastRadius);
             if (Falloff > 0.f && HasBlastLineOfSight(Position, Player, Bomb))
+            {
                 Player->LaunchCharacter((Player->GetActorLocation()-Position).GetSafeNormal2D()*JumpHorizontalSpeed*Falloff
                     + FVector(0,0,JumpVerticalSpeed*Falloff), true, true);
+                OnPlayerBlasted(Player);
+            }
         }
     }
     GetWorld()->SpawnActor<ABDBlastFlash>(Position, FRotator::ZeroRotator);
+}
+FVector ABDGameMode::GetHeldBlastVelocity(const ABDCharacter* Player) const
+{
+    return -Player->GetActorForwardVector()*JumpHorizontalSpeed + FVector(0,0,JumpVerticalSpeed);
 }
 void ABDGameMode::RestartTutorial()
 {

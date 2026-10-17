@@ -39,8 +39,15 @@ public:
     ABDBomb* DrawBomb(ABDCharacter* Holder);
     void ClearBomb(ABDBomb* Bomb);
     void ExplodeAt(const FVector& Position, ABDCharacter* Holder, AActor* Bomb);
-    void RestartTutorial();
+    virtual void RestartTutorial();
     void CompleteTutorial();
+    virtual bool IsGameplayInputAllowed() const { return !bCompleted; }
+    virtual void OnBombReleased(ABDBomb* Bomb, bool bThrown) {}
+    virtual void OnBombExploded(ABDBomb* Bomb) {}
+    virtual void OnCrateBlasted(ABDCrate* BlastedCrate) {}
+    virtual void OnPlayerBlasted(ABDCharacter* Player) {}
+    virtual bool RequestSceneReset() { return false; }
+    virtual FVector GetHeldBlastVelocity(const ABDCharacter* Player) const;
     static float BlastFalloff(float Distance, float Radius);
     bool HasBlastLineOfSight(const FVector& From, AActor* Target, AActor* Bomb) const;
 private:

@@ -102,12 +102,20 @@ void ABDCharacter::DropBomb()
 void ABDCharacter::ThrowBomb()
 {
     if (auto* Mode = GetWorld()->GetAuthGameMode<ABDGameMode>())
+    {
+        if (!Mode->IsGameplayInputAllowed()) return;
+        if (!IsValid(Mode->ActiveBomb)) Mode->DrawBomb(this);
         if (IsValid(Mode->ActiveBomb) && Mode->ActiveBomb->IsHeld()) Mode->ActiveBomb->Release(true);
+    }
 }
 void ABDCharacter::Respawn()
 {
+    if (auto* Mode = GetWorld()->GetAuthGameMode<ABDGameMode>())
+    {
+        if (Mode->RequestSceneReset()) return;
+        if (IsValid(Mode->ActiveBomb) && Mode->ActiveBomb->IsHeld()) Mode->ActiveBomb->Release(false, false);
+    }
     // Dropped/thrown bombs keep burning; a held bomb is left at the fall position.
-    DropBomb();
     GetCharacterMovement()->StopMovementImmediately();
     SetActorTransform(SpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
     GetCharacterMovement()->SetMovementMode(MOVE_Falling);

@@ -51,7 +51,7 @@ void ABDHUD::DrawHUD()
         Text(TEXT("WASD   Move     Mouse   Aim"),30,386,.66f,Ink);
         Text(TEXT("Hold RMB   Draw / burn fuse"),30,413,.66f,Ink);
         Text(TEXT("Release RMB   Drop at your feet"),30,440,.66f,Ink);
-        Text(TEXT("LMB while holding   Throw"),30,467,.66f,Ink);
+        Text(TEXT("LMB   Throw bomb"),30,467,.66f,Ink);
         Text(TEXT("R   Restart     Esc   Pause"),30,504,.66f,Muted);
         Text(TEXT("Unlimited bombs. One at a time."),30,532,.59f,Muted);
     }

@@ -53,6 +53,7 @@ public:
     ABDGoal();
     virtual void OnConstruction(const FTransform& Transform) override;
     bool ContainsSettledCrate(const ABDCrate* Crate) const;
+    bool ContainsCrate(const ABDCrate* Crate) const;
     UPROPERTY(EditAnywhere, Category="Goal") FVector Extent = FVector(180,180,100);
     UPROPERTY(EditAnywhere, Category="Goal") float MaxSettledSpeed = 3.f;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> Region;

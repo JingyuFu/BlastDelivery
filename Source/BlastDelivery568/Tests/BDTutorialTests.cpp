@@ -19,6 +19,7 @@
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/GameViewportClient.h"
+#include "Slate/SceneViewport.h"
 
 namespace BDTests
 {
@@ -45,6 +46,9 @@ struct FFixture
     void Key(FKey Key, EInputEvent Event) const
     {
         Controller->InputKey(FInputKeyEventArgs::CreateSimulated(Key,Event, Event == IE_Released ? 0.f : 1.f));
+        // Dispatch each simulated edge separately. Consecutive latent steps can run
+        // in one editor frame; queuing release+press together misrepresents a click.
+        Controller->PlayerTick(Controller->IsPaused() ? 0.f : 1.f/120.f);
     }
     void PlacePlayer(FVector P, FRotator R = FRotator::ZeroRotator) const
     {
@@ -357,7 +361,10 @@ bool FBDBombReuseAndCameraTest::RunTest(const FString& Parameters)
     auto Step = [&](const TCHAR* Name,float Seconds,FAction Begin={},FAction During={},FAction End={})
     { FAutomationTestFramework::Get().EnqueueLatentCommand(MakeShared<FStep>(F,Name,Seconds,MoveTemp(Begin),MoveTemp(During),MoveTemp(End))); };
 
-    Step(TEXT("Mouse capture and angled camera"), .7f, {}, {}, [](FFixture& X)
+    Step(TEXT("Mouse capture and angled camera"), .7f, [](FFixture& X)
+    {
+        X.World->GetGameViewport()->GetGameViewport()->SetFixedViewportSize(1280,800);
+    }, {}, [](FFixture& X)
     {
         X.Test->TestTrue(TEXT("Every viewport mouse press is forwarded"),
             X.World->GetGameViewport()->GetMouseCaptureMode()==EMouseCaptureMode::CaptureDuringMouseDown);
